@@ -58,11 +58,5 @@ The interface was designed using principles from user-centered design and visual
 - HTML
 - CSS
 - Bootstrap
-- Vite
 
-## Installation
 
-Clone the repository:
-
-```bash
-git clone https://github.com/YOUR-USERNAME/memomatch-quest.git
