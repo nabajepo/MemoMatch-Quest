@@ -45,12 +45,22 @@ function GameBoard({ playerName, selectedLevel, selectedTheme, onReturnToMenu })
 
     const selectedIcons = theme.icons.slice(0, level.pairs);
 
-    const cardPairs = [...selectedIcons, ...selectedIcons].map((icon, index) => ({
-      id: index,
-      icon,
-      isFlipped: false,
-      isMatched: false,
-    }));
+    const cardPairs = selectedIcons.flatMap((icon, index) => [
+      {
+        id: `${index}-a`,
+        pairId: index,
+        icon,
+        isFlipped: false,
+        isMatched: false,
+      },
+      {
+        id: `${index}-b`,
+        pairId: index,
+        icon,
+        isFlipped: false,
+        isMatched: false,
+      },
+    ]);
 
     setCards(cardPairs.sort(() => Math.random() - 0.5));
     setSelectedCards([]);
@@ -90,13 +100,15 @@ function GameBoard({ playerName, selectedLevel, selectedTheme, onReturnToMenu })
 
       const [firstCard, secondCard] = newSelectedCards;
 
-      if (firstCard.icon === secondCard.icon) {
+      if (firstCard.pairId === secondCard.pairId) {
         matchSound.currentTime = 0;
         matchSound.play();
 
         setCards((currentCards) =>
           currentCards.map((card) =>
-            card.icon === firstCard.icon ? { ...card, isMatched: true } : card
+            card.pairId === firstCard.pairId
+              ? { ...card, isMatched: true }
+              : card
           )
         );
 
