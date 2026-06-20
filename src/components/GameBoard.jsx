@@ -12,6 +12,7 @@ function GameBoard({ playerName, selectedLevel, selectedTheme, onReturnToMenu })
   const [moves, setMoves] = useState(0);
   const [seconds, setSeconds] = useState(0);
   const [victoryPlayed, setVictoryPlayed] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
 
   const totalPairs = levels[selectedLevel].pairs;
   const matchedPairs = cards.filter((card) => card.isMatched).length / 2;
@@ -62,11 +63,14 @@ function GameBoard({ playerName, selectedLevel, selectedTheme, onReturnToMenu })
       },
     ]);
 
-    setCards(cardPairs.sort(() => Math.random() - 0.5));
+    const shuffledCards = [...cardPairs].sort(() => Math.random() - 0.5);
+
+    setCards(shuffledCards);
     setSelectedCards([]);
     setMoves(0);
     setSeconds(0);
     setVictoryPlayed(false);
+    setIsChecking(false);
   };
 
   const formatTime = (totalSeconds) => {
@@ -84,18 +88,29 @@ function GameBoard({ playerName, selectedLevel, selectedTheme, onReturnToMenu })
   };
 
   const handleCardClick = (clickedCard) => {
-    if (selectedCards.length === 2 || hasWon) return;
+    if (
+      isChecking ||
+      hasWon ||
+      clickedCard.isFlipped ||
+      clickedCard.isMatched ||
+      selectedCards.length >= 2
+    ) {
+      return;
+    }
+
+    const flippedCard = { ...clickedCard, isFlipped: true };
 
     setCards((currentCards) =>
       currentCards.map((card) =>
-        card.id === clickedCard.id ? { ...card, isFlipped: true } : card
+        card.id === clickedCard.id ? flippedCard : card
       )
     );
 
-    const newSelectedCards = [...selectedCards, clickedCard];
+    const newSelectedCards = [...selectedCards, flippedCard];
     setSelectedCards(newSelectedCards);
 
     if (newSelectedCards.length === 2) {
+      setIsChecking(true);
       setMoves((previousMoves) => previousMoves + 1);
 
       const [firstCard, secondCard] = newSelectedCards;
@@ -104,15 +119,18 @@ function GameBoard({ playerName, selectedLevel, selectedTheme, onReturnToMenu })
         matchSound.currentTime = 0;
         matchSound.play();
 
-        setCards((currentCards) =>
-          currentCards.map((card) =>
-            card.pairId === firstCard.pairId
-              ? { ...card, isMatched: true }
-              : card
-          )
-        );
+        setTimeout(() => {
+          setCards((currentCards) =>
+            currentCards.map((card) =>
+              card.pairId === firstCard.pairId
+                ? { ...card, isMatched: true, isFlipped: true }
+                : card
+            )
+          );
 
-        setSelectedCards([]);
+          setSelectedCards([]);
+          setIsChecking(false);
+        }, 300);
       } else {
         setTimeout(() => {
           setCards((currentCards) =>
@@ -124,6 +142,7 @@ function GameBoard({ playerName, selectedLevel, selectedTheme, onReturnToMenu })
           );
 
           setSelectedCards([]);
+          setIsChecking(false);
         }, 800);
       }
     }
@@ -206,7 +225,7 @@ function GameBoard({ playerName, selectedLevel, selectedTheme, onReturnToMenu })
         <div
           className="game-board"
           style={{
-            gridTemplateColumns: `repeat(${levels[selectedLevel].columns}, 88px)`,
+            "--columns": levels[selectedLevel].columns,
           }}
         >
           {cards.map((card) => (
